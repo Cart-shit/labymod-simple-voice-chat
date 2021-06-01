@@ -1,8 +1,11 @@
 package de.maxhenkel.voicechat.debug;
 
-import de.maxhenkel.voicechat.Voicechat;
+import de.maxhenkel.voicechat.VoicechatClient;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class Debug {
 
@@ -23,7 +26,7 @@ public class Debug {
     public static void saveDebugAudio() {
         try {
             File tempFile = File.createTempFile("test", ".sound");
-            Voicechat.LOGGER.info(tempFile.getAbsolutePath());
+            VoicechatClient.LOGGER.info(tempFile.getAbsolutePath());
             FileOutputStream fos = new FileOutputStream(tempFile, false);
             buffer.writeTo(fos);
             buffer.close();

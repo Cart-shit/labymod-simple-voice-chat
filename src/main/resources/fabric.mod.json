@@ -16,9 +16,6 @@
   "entrypoints": {
     "client": [
       "de.maxhenkel.voicechat.VoicechatClient"
-    ],
-    "main": [
-      "de.maxhenkel.voicechat.Voicechat"
     ]
   },
   "mixins": [

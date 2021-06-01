@@ -2,7 +2,7 @@ package de.maxhenkel.voicechat.voice.common;
 
 import com.sun.jna.ptr.PointerByReference;
 import de.maxhenkel.opus4j.Opus;
-import de.maxhenkel.voicechat.Voicechat;
+import de.maxhenkel.voicechat.VoicechatClient;
 
 import javax.annotation.Nullable;
 import java.nio.IntBuffer;
@@ -25,7 +25,7 @@ public class OpusDecoder {
         if (error.get() != Opus.OPUS_OK && opusDecoder == null) {
             throw new IllegalStateException("Opus decoder error " + error.get());
         }
-        Voicechat.LOGGER.info("Initializing Opus decoder with sample rate " + sampleRate + " Hz, frame size " + frameSize + " bytes and max payload size " + maxPayloadSize + " bytes");
+        VoicechatClient.LOGGER.info("Initializing Opus decoder with sample rate " + sampleRate + " Hz, frame size " + frameSize + " bytes and max payload size " + maxPayloadSize + " bytes");
     }
 
     public byte[] decode(@Nullable byte[] data) {

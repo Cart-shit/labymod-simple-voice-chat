@@ -2,10 +2,10 @@ package de.maxhenkel.voicechat.gui.widgets;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import de.maxhenkel.voicechat.gui.SkinUtils;
 import de.maxhenkel.voicechat.Voicechat;
 import de.maxhenkel.voicechat.VoicechatClient;
 import de.maxhenkel.voicechat.gui.AdjustVolumeScreen;
+import de.maxhenkel.voicechat.gui.SkinUtils;
 import de.maxhenkel.voicechat.gui.VoiceChatScreenBase;
 import de.maxhenkel.voicechat.voice.client.Client;
 import de.maxhenkel.voicechat.voice.common.PlayerState;

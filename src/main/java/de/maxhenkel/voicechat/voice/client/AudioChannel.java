@@ -1,6 +1,5 @@
 package de.maxhenkel.voicechat.voice.client;
 
-import de.maxhenkel.voicechat.Voicechat;
 import de.maxhenkel.voicechat.VoicechatClient;
 import de.maxhenkel.voicechat.voice.common.OpusDecoder;
 import de.maxhenkel.voicechat.voice.common.PlayerState;
@@ -42,7 +41,7 @@ public class AudioChannel extends Thread {
         this.minecraft = Minecraft.getInstance();
         setDaemon(true);
         setName("AudioChannelThread-" + uuid.toString());
-        Voicechat.LOGGER.debug("Creating audio channel for " + uuid);
+        VoicechatClient.LOGGER.debug("Creating audio channel for " + uuid);
     }
 
     public boolean canKill() {
@@ -50,7 +49,7 @@ public class AudioChannel extends Thread {
     }
 
     public void closeAndKill() {
-        Voicechat.LOGGER.debug("Closing audio channel for " + uuid);
+        VoicechatClient.LOGGER.debug("Closing audio channel for " + uuid);
         stopped = true;
     }
 
@@ -111,7 +110,7 @@ public class AudioChannel extends Thread {
                     int packetsToCompensate = (int) (packet.getSequenceNumber() - (lastSequenceNumber + 1));
                     for (int i = 0; i < packetsToCompensate; i++) {
                         if (speaker.available() < client.getAudioChannelConfig().getFrameSize()) {
-                            Voicechat.LOGGER.debug("Could not compensate more than " + i + " audio packets");
+                            VoicechatClient.LOGGER.debug("Could not compensate more than " + i + " audio packets");
                             break;
                         }
                         writeToSpeaker(decoder.decode(null));
@@ -133,7 +132,7 @@ public class AudioChannel extends Thread {
                 speaker.close();
             }
             decoder.close();
-            Voicechat.LOGGER.debug("Closed audio channel for " + uuid);
+            VoicechatClient.LOGGER.debug("Closed audio channel for " + uuid);
         }
     }
 

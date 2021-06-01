@@ -4,7 +4,9 @@ import de.maxhenkel.voicechat.VoicechatClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class TalkCache {
 

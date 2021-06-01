@@ -1,12 +1,11 @@
 package de.maxhenkel.voicechat.voice.common;
 
 import com.sun.jna.ptr.PointerByReference;
+import de.maxhenkel.opus4j.Opus;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
-
-import de.maxhenkel.opus4j.Opus;
 
 public class OpusEncoder {
 

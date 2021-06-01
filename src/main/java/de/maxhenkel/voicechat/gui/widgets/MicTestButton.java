@@ -1,7 +1,6 @@
 package de.maxhenkel.voicechat.gui.widgets;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import de.maxhenkel.voicechat.Voicechat;
 import de.maxhenkel.voicechat.VoicechatClient;
 import de.maxhenkel.voicechat.voice.client.Client;
 import de.maxhenkel.voicechat.voice.client.DataLines;
@@ -160,7 +159,7 @@ public class MicTestButton extends AbstractButton {
         }
 
         public void close() {
-            Voicechat.LOGGER.debug("Closing mic test audio channel");
+            VoicechatClient.LOGGER.debug("Closing mic test audio channel");
             running = false;
             speaker.stop();
             speaker.flush();

@@ -1,6 +1,6 @@
 package de.maxhenkel.voicechat.voice.client;
 
-import de.maxhenkel.voicechat.Voicechat;
+import de.maxhenkel.voicechat.VoicechatClient;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -17,7 +17,7 @@ public class AudioChannelConfig {
         monoFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, 16, 1, 2, sampleRate, false);
         stereoFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, 16, 2, 4, sampleRate, false);
 
-        Voicechat.LOGGER.info("Setting sample rate to {} Hz, codec to {} and frame size to {} bytes", sampleRate, client.getCodec().name(), frameSize);
+        VoicechatClient.LOGGER.info("Setting sample rate to {} Hz, codec to {} and frame size to {} bytes", sampleRate, client.getCodec().name(), frameSize);
     }
 
     public AudioFormat getMonoFormat() {
