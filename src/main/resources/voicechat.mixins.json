@@ -3,11 +3,8 @@
   "minVersion": "0.8",
   "package": "de.maxhenkel.voicechat.mixin",
   "compatibilityLevel": "JAVA_16",
-  "mixins": [
-    "PlayerManagerMixin"
-  ],
+  "mixins": [],
   "client": [
-    "ClientConnectionMixin",
     "EntityRendererMixin",
     "MinecraftMixin",
     "KeyboardMixin",

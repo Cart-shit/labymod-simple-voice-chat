@@ -1,32 +1,41 @@
 package de.maxhenkel.voicechat.voice.client;
 
+import de.foorcee.labymod.voicechat.client.LabymodVoicechatClient;
+import de.maxhenkel.opus4j.Opus;
 import de.maxhenkel.voicechat.VoicechatClient;
-import de.maxhenkel.voicechat.voice.common.MicPacket;
-import de.maxhenkel.voicechat.voice.common.NetworkMessage;
 import de.maxhenkel.voicechat.voice.common.OpusEncoder;
 import de.maxhenkel.voicechat.voice.common.Utils;
+import lombok.extern.log4j.Log4j2;
+import net.labymod.voicechat.protocol.packet.audio.AudioChunkServer;
+import net.minecraft.client.Minecraft;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.TargetDataLine;
+import java.nio.ByteBuffer;
+import java.util.UUID;
 
+@Log4j2
 public class MicThread extends Thread {
 
-    private Client client;
+    private UUID uuid;
+    private LabymodVoicechatClient client;
     private TargetDataLine mic;
     private boolean running;
     private boolean microphoneLocked;
     private OpusEncoder encoder;
 
-    public MicThread(Client client) throws LineUnavailableException {
+    public MicThread(LabymodVoicechatClient client) throws LineUnavailableException {
         this.client = client;
         this.running = true;
-        this.encoder = new OpusEncoder(client.getAudioChannelConfig().getSampleRate(), client.getAudioChannelConfig().getFrameSize(), client.getMtuSize(), client.getCodec().getOpusValue());
+        this.encoder = new OpusEncoder(client.getAudioChannelConfig().getSampleRate(),
+                client.getAudioChannelConfig().getFrameSize(), client.getMaxPacketSize(), Opus.OPUS_APPLICATION_VOIP);
         setDaemon(true);
         setName("MicrophoneThread");
         AudioFormat af = client.getAudioChannelConfig().getMonoFormat();
         mic = DataLines.getMicrophone();
         mic.open(af);
+        this.uuid = Minecraft.getInstance().getUser().getGameProfile().getId();
     }
 
     @Override
@@ -133,12 +142,17 @@ public class MicThread extends Thread {
         sendAudioPacket(buff);
     }
 
-    private long sequenceNumber = 0L;
-
     private void sendAudioPacket(byte[] data) {
         try {
             byte[] encoded = encoder.encode(data);
-            client.sendToServer(new NetworkMessage(new MicPacket(encoded, sequenceNumber++)));
+
+            ByteBuffer encodedBuffer = ByteBuffer.allocate(encoded.length + 8);
+            encodedBuffer.putLong(System.nanoTime());
+            encodedBuffer.put(encoded);
+            encodedBuffer.flip();
+            encoded = encodedBuffer.array();
+
+            client.sendUdpPacket(new AudioChunkServer(uuid, encoded));
         } catch (Exception e) {
             e.printStackTrace();
         }

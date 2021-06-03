@@ -3,26 +3,18 @@ package de.maxhenkel.voicechat.voice.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import de.maxhenkel.voicechat.Voicechat;
+import de.foorcee.labymod.voicechat.client.LabymodVoicechatClient;
 import de.maxhenkel.voicechat.VoicechatClient;
-import de.maxhenkel.voicechat.events.ClientVoiceChatEvents;
 import de.maxhenkel.voicechat.events.ClientWorldEvents;
-import de.maxhenkel.voicechat.events.IClientConnection;
 import de.maxhenkel.voicechat.events.RenderEvents;
-import de.maxhenkel.voicechat.gui.CreateGroupScreen;
-import de.maxhenkel.voicechat.gui.GroupScreen;
 import de.maxhenkel.voicechat.gui.VoiceChatScreen;
 import de.maxhenkel.voicechat.gui.VoiceChatSettingsScreen;
-import de.maxhenkel.voicechat.net.InitPacket;
-import de.maxhenkel.voicechat.net.NetManager;
-import de.maxhenkel.voicechat.net.SetGroupPacket;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -34,27 +26,27 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
 public class ClientVoiceEvents {
 
-    private static final ResourceLocation MICROPHONE_ICON = new ResourceLocation(Voicechat.MODID, "textures/gui/microphone.png");
-    private static final ResourceLocation MICROPHONE_OFF_ICON = new ResourceLocation(Voicechat.MODID, "textures/gui/microphone_off.png");
-    private static final ResourceLocation SPEAKER_ICON = new ResourceLocation(Voicechat.MODID, "textures/gui/speaker.png");
-    private static final ResourceLocation SPEAKER_OFF_ICON = new ResourceLocation(Voicechat.MODID, "textures/gui/speaker_off.png");
-    private static final ResourceLocation DISCONNECT_ICON = new ResourceLocation(Voicechat.MODID, "textures/gui/disconnected.png");
-    private static final ResourceLocation GROUP_ICON = new ResourceLocation(Voicechat.MODID, "textures/gui/group.png");
+    private static final ResourceLocation MICROPHONE_ICON = new ResourceLocation(VoicechatClient.MODID, "textures/gui/microphone.png");
+    private static final ResourceLocation MICROPHONE_OFF_ICON = new ResourceLocation(VoicechatClient.MODID, "textures/gui/microphone_off.png");
+    private static final ResourceLocation SPEAKER_ICON = new ResourceLocation(VoicechatClient.MODID, "textures/gui/speaker.png");
+    private static final ResourceLocation SPEAKER_ICON_INACTIVE = new ResourceLocation(VoicechatClient.MODID, "textures/gui/speaker_inactive.png");
+    private static final ResourceLocation SPEAKER_OFF_ICON = new ResourceLocation(VoicechatClient.MODID, "textures/gui/speaker_off.png");
+    private static final ResourceLocation DISCONNECT_ICON = new ResourceLocation(VoicechatClient.MODID, "textures/gui/disconnected.png");
+    private static final ResourceLocation GROUP_ICON = new ResourceLocation(VoicechatClient.MODID, "textures/gui/group.png");
 
-    private Client client;
-    private ClientPlayerStateManager playerStateManager;
-    private PTTKeyHandler pttKeyHandler;
-    private Minecraft minecraft;
+    private final LabymodVoicechatClient client;
+    private final ClientPlayerStateManager playerStateManager;
+    private final TalkCache talkCache;
+    private final PTTKeyHandler pttKeyHandler;
+    private final Minecraft minecraft;
 
-    public ClientVoiceEvents() {
+    public ClientVoiceEvents(VoicechatClient client) {
         playerStateManager = new ClientPlayerStateManager();
+        talkCache = new TalkCache();
         pttKeyHandler = new PTTKeyHandler();
         minecraft = Minecraft.getInstance();
 
@@ -64,48 +56,19 @@ public class ClientVoiceEvents {
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTickEnd);
         RenderEvents.RENDER_NAMEPLATE.register(this::onRenderName);
 
-        NetManager.registerClientReceiver(InitPacket.class, (client, handler, responseSender, packet) -> {
-            authenticate(handler.getLocalGameProfile().getId(), packet);
-        });
-
-        NetManager.registerClientReceiver(SetGroupPacket.class, (client, handler, responseSender, packet) -> {
-            playerStateManager.setGroup(packet.getGroup());
-            minecraft.setScreen(null);
-        });
-    }
-
-    public void authenticate(UUID playerUUID, InitPacket initPacket) {
-        VoicechatClient.LOGGER.info("Received secret");
-        if (client != null) {
-            onDisconnect();
-        }
-        ClientPacketListener connection = minecraft.getConnection();
-        if (connection != null) {
-            try {
-                SocketAddress socketAddress = ((IClientConnection) connection.getConnection()).getChannel().remoteAddress();
-                if (socketAddress instanceof InetSocketAddress) {
-                    InetSocketAddress address = (InetSocketAddress) socketAddress;
-                    String ip = address.getHostString();
-                    VoicechatClient.LOGGER.info("Connecting to server: '" + ip + ":" + initPacket.getServerPort() + "'");
-                    client = new Client(ip, initPacket.getServerPort(), playerUUID, initPacket.getSecret(), initPacket.getCodec(), initPacket.getMtuSize(), initPacket.getVoiceChatDistance(), initPacket.getVoiceChatFadeDistance(), initPacket.getKeepAlive(), initPacket.groupsEnabled());
-                    client.start();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        this.client = new LabymodVoicechatClient(client);
+        this.client.connect();
     }
 
     public void onDisconnect() {
-        ClientVoiceChatEvents.VOICECHAT_DISCONNECTED.invoker().run();
-        if (client != null) {
-            client.close();
-            client = null;
-        }
+//        ClientVoiceChatEvents.VOICECHAT_DISCONNECTED.invoker().run();
+//        if (client != null) {
+//            client = null;
+//        }
     }
 
     @Nullable
-    public Client getClient() {
+    public LabymodVoicechatClient getClient() {
         return client;
     }
 
@@ -135,9 +98,7 @@ public class ClientVoiceEvents {
             renderIcon(stack, MICROPHONE_ICON);
         }
 
-        if (playerStateManager.isInGroup() && VoicechatClient.CLIENT_CONFIG.showGroupHUD.get()) {
-            GroupChatManager.renderIcons(stack);
-        }
+        TalkingChatManager.renderIcons(stack);
     }
 
     private void renderIcon(PoseStack matrixStack, ResourceLocation texture) {
@@ -157,15 +118,6 @@ public class ClientVoiceEvents {
         }
 
         if (VoicechatClient.KEY_GROUP.consumeClick() && checkConnected()) {
-            if (client.groupsEnabled()) {
-                if (playerStateManager.isInGroup()) {
-                    minecraft.setScreen(new GroupScreen());
-                } else {
-                    minecraft.setScreen(new CreateGroupScreen());
-                }
-            } else {
-                minecraft.player.displayClientMessage(new TranslatableComponent("message.voicechat.groups_disabled"), true);
-            }
         }
 
         if (VoicechatClient.KEY_VOICE_CHAT_SETTINGS.consumeClick() && checkConnected()) {
@@ -198,7 +150,7 @@ public class ClientVoiceEvents {
     }
 
     public boolean checkConnected() {
-        if (VoicechatClient.CLIENT.getClient() == null || !VoicechatClient.CLIENT.getClient().isAuthenticated()) {
+        if (VoicechatClient.CLIENT.getClient() == null || !VoicechatClient.CLIENT.getClient().getState().isConnected()) {
             sendUnavailableMessage();
             return false;
         }
@@ -230,18 +182,21 @@ public class ClientVoiceEvents {
         Player player = (Player) entity;
 
         if (!minecraft.options.hideGui) {
-            String group = playerStateManager.getGroup(player);
-
             if (playerStateManager.isPlayerDisconnected(player)) {
-                renderPlayerIcon(player, component, DISCONNECT_ICON, stack, vertexConsumers, light);
-            } else if (group != null && !group.equals(playerStateManager.getGroup())) {
-                renderPlayerIcon(player, component, GROUP_ICON, stack, vertexConsumers, light);
+                return;
+                //renderPlayerIcon(player, component, DISCONNECT_ICON, stack, vertexConsumers, light);
             } else if (playerStateManager.isPlayerDisabled(player)) {
                 renderPlayerIcon(player, component, SPEAKER_OFF_ICON, stack, vertexConsumers, light);
-            } else if (client != null && client.getTalkCache().isTalking(player)) {
+            } else if (VoicechatClient.CLIENT.getTalkCache().isTalking(player)) {
                 renderPlayerIcon(player, component, SPEAKER_ICON, stack, vertexConsumers, light);
+            }else{
+                renderPlayerIcon(player, component, SPEAKER_ICON_INACTIVE, stack, vertexConsumers, light);
             }
         }
+    }
+
+    public TalkCache getTalkCache() {
+        return talkCache;
     }
 
     protected void renderPlayerIcon(Player player, Component component, ResourceLocation texture, PoseStack matrixStackIn, MultiBufferSource buffer, int light) {

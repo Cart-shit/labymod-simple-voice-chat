@@ -1,32 +1,27 @@
 package de.maxhenkel.voicechat;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import de.foorcee.labymod.voicechat.client.DevAuthUtil;
 import de.maxhenkel.voicechat.config.ClientConfig;
 import de.maxhenkel.voicechat.config.ConfigBuilder;
+import de.maxhenkel.voicechat.config.MutedPlayerConfig;
 import de.maxhenkel.voicechat.config.PlayerVolumeConfig;
+import de.maxhenkel.voicechat.events.ClientTickVisitListener;
 import de.maxhenkel.voicechat.voice.client.ClientVoiceEvents;
-import io.netty.buffer.Unpooled;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.networking.v1.ClientLoginNetworking;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
-
-import java.util.concurrent.CompletableFuture;
 
 @Environment(EnvType.CLIENT)
 public class VoicechatClient implements ClientModInitializer {
 
     public static final String MODID = "voicechat";
-    public static final ResourceLocation INIT = new ResourceLocation(MODID, "init");
-    public static int COMPATIBILITY_VERSION = -1;
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     public static KeyMapping KEY_PTT;
@@ -40,23 +35,15 @@ public class VoicechatClient implements ClientModInitializer {
     public static ClientVoiceEvents CLIENT;
     public static ClientConfig CLIENT_CONFIG;
     public static PlayerVolumeConfig VOLUME_CONFIG;
+    public static MutedPlayerConfig MUTED_PLAYER;
 
     @Override
     public void onInitializeClient() {
-        ClientLoginNetworking.registerGlobalReceiver(INIT, (client, handler, buf, listenerAdder) -> {
-            int serverCompatibilityVersion = buf.readInt();
-
-            if (serverCompatibilityVersion != COMPATIBILITY_VERSION) {
-                VoicechatClient.LOGGER.warn("Incompatible voice chat version (server={}, client={})", serverCompatibilityVersion, COMPATIBILITY_VERSION);
-            }
-
-            FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
-            buffer.writeInt(COMPATIBILITY_VERSION);
-            return CompletableFuture.completedFuture(buffer);
-        });
+        DevAuthUtil.auth();
 
         ConfigBuilder.create(Minecraft.getInstance().gameDirectory.toPath().resolve("config").resolve(MODID).resolve("voicechat-client.properties"), builder -> CLIENT_CONFIG = new ClientConfig(builder));
         VOLUME_CONFIG = new PlayerVolumeConfig(Minecraft.getInstance().gameDirectory.toPath().resolve("config").resolve("voicechat-volumes.properties"));
+        MUTED_PLAYER = new MutedPlayerConfig(Minecraft.getInstance().gameDirectory.toPath().resolve("config").resolve(MODID).resolve("voicechat-mutes.properties"));
 
         KEY_PTT = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.push_to_talk", GLFW.GLFW_KEY_CAPS_LOCK, "key.categories.voicechat"));
         KEY_MUTE = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.mute_microphone", GLFW.GLFW_KEY_M, "key.categories.voicechat"));
@@ -66,6 +53,8 @@ public class VoicechatClient implements ClientModInitializer {
         KEY_VOICE_CHAT_SETTINGS = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.voice_chat_settings", InputConstants.UNKNOWN.getValue(), "key.categories.voicechat"));
         KEY_GROUP = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.voice_chat_group", InputConstants.UNKNOWN.getValue(), "key.categories.voicechat"));
 
-        CLIENT = new ClientVoiceEvents();
+        CLIENT = new ClientVoiceEvents(this);
+
+        new ClientTickVisitListener();
     }
 }

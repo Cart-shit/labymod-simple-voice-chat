@@ -1,10 +1,11 @@
 package de.maxhenkel.voicechat.voice.client;
 
+import de.foorcee.labymod.voicechat.client.LabymodVoicechatClient;
 import de.maxhenkel.voicechat.VoicechatClient;
 import de.maxhenkel.voicechat.voice.common.OpusDecoder;
 import de.maxhenkel.voicechat.voice.common.PlayerState;
-import de.maxhenkel.voicechat.voice.common.SoundPacket;
 import de.maxhenkel.voicechat.voice.common.Utils;
+import net.labymod.voicechat.protocol.packet.audio.AudioChunkServer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import org.apache.commons.lang3.tuple.Pair;
@@ -12,6 +13,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -20,24 +22,22 @@ import java.util.concurrent.TimeUnit;
 public class AudioChannel extends Thread {
 
     private Minecraft minecraft;
-    private Client client;
+    private LabymodVoicechatClient client;
     private UUID uuid;
-    private BlockingQueue<SoundPacket> queue;
+    private BlockingQueue<AudioChunkServer> queue;
     private long lastPacketTime;
     private SourceDataLine speaker;
     private FloatControl gainControl;
     private boolean stopped;
     private OpusDecoder decoder;
-    private long lastSequenceNumber;
 
-    public AudioChannel(Client client, UUID uuid) {
+    public AudioChannel(LabymodVoicechatClient client, UUID uuid) {
         this.client = client;
         this.uuid = uuid;
         this.queue = new LinkedBlockingQueue<>();
         this.lastPacketTime = System.currentTimeMillis();
         this.stopped = false;
-        this.decoder = new OpusDecoder(client.getAudioChannelConfig().getSampleRate(), client.getAudioChannelConfig().getFrameSize(), client.getMtuSize());
-        this.lastSequenceNumber = -1L;
+        this.decoder = new OpusDecoder(client.getAudioChannelConfig().getSampleRate(), client.getAudioChannelConfig().getFrameSize(), client.getMaxPacketSize());
         this.minecraft = Minecraft.getInstance();
         setDaemon(true);
         setName("AudioChannelThread-" + uuid.toString());
@@ -57,7 +57,7 @@ public class AudioChannel extends Thread {
         return uuid;
     }
 
-    public void addToQueue(SoundPacket p) {
+    public void addToQueue(AudioChunkServer p) {
         queue.add(p);
     }
 
@@ -70,7 +70,11 @@ public class AudioChannel extends Thread {
             gainControl = (FloatControl) speaker.getControl(FloatControl.Type.MASTER_GAIN);
             while (!stopped) {
 
-                if (VoicechatClient.CLIENT.getPlayerStateManager().isDisabled()) {
+                PlayerState playerState = VoicechatClient.CLIENT.getPlayerStateManager().getState(uuid);
+                boolean disabled = VoicechatClient.CLIENT.getPlayerStateManager().isDisabled()
+                        || playerState != null && playerState.isDisabled();
+
+                if (disabled) {
                     speaker.stop();
                     queue.clear();
                     closeAndKill();
@@ -81,16 +85,21 @@ public class AudioChannel extends Thread {
                 // to prevent the last sound getting repeated
                 if (speaker.getBufferSize() - speaker.available() <= 0 && speaker.isActive()) {
                     speaker.stop();
-                    lastSequenceNumber = -1L;
                 }
 
-                SoundPacket packet = queue.poll(10, TimeUnit.MILLISECONDS);
+                AudioChunkServer packet = queue.poll(10, TimeUnit.MILLISECONDS);
                 if (packet == null) {
                     continue;
                 }
                 lastPacketTime = System.currentTimeMillis();
 
-                if (lastSequenceNumber >= 0 && packet.getSequenceNumber() <= lastSequenceNumber) {
+
+                ByteBuffer buffer = ByteBuffer.wrap(packet.getBytes());
+                long time = buffer.getLong();
+                byte[] encodedData = new byte[buffer.remaining()];
+                buffer.get(encodedData);
+
+                if (minecraft.level == null || minecraft.player == null) {
                     continue;
                 }
 
@@ -100,26 +109,9 @@ public class AudioChannel extends Thread {
                     byte[] data = new byte[Math.min(client.getAudioChannelConfig().getFrameSize() * VoicechatClient.CLIENT_CONFIG.outputBufferSize.get(), speaker.getBufferSize() - client.getAudioChannelConfig().getFrameSize())];
                     speaker.write(data, 0, data.length);
                 }
-                if (minecraft.level == null || minecraft.player == null) {
-                    continue;
-                }
 
-                client.getTalkCache().updateTalking(uuid);
-
-                if (lastSequenceNumber >= 0) {
-                    int packetsToCompensate = (int) (packet.getSequenceNumber() - (lastSequenceNumber + 1));
-                    for (int i = 0; i < packetsToCompensate; i++) {
-                        if (speaker.available() < client.getAudioChannelConfig().getFrameSize()) {
-                            VoicechatClient.LOGGER.debug("Could not compensate more than " + i + " audio packets");
-                            break;
-                        }
-                        writeToSpeaker(decoder.decode(null));
-                    }
-                }
-
-                lastSequenceNumber = packet.getSequenceNumber();
-
-                byte[] decodedAudio = decoder.decode(packet.getData());
+                VoicechatClient.CLIENT.getTalkCache().updateTalking(uuid);
+                byte[] decodedAudio = decoder.decode(encodedData);
 
                 writeToSpeaker(decodedAudio);
             }
@@ -141,30 +133,28 @@ public class AudioChannel extends Thread {
         byte[] stereo;
         float percentage = 1F;
 
-        if (state != null && state.hasGroup()) {
-            stereo = Utils.convertToStereo(monoData, 1F, 1F);
-        } else {
-            Player player = minecraft.level.getPlayerByUUID(uuid);
-            if (player == null) {
-                return;
-            }
-            float distance = player.distanceTo(minecraft.player);
-            float fadeDistance = (float) client.getVoiceChatFadeDistance();
-            float maxDistance = (float) client.getVoiceChatDistance();
+        Player player = minecraft.level.getPlayerByUUID(uuid);
+        if (player == null) {
+            return;
+        }
+        float distance = player.distanceTo(minecraft.player);
+        float fadeDistance = VoicechatClient.CLIENT_CONFIG.voiceChatFadeDistance.get().floatValue();
+        float maxDistance = VoicechatClient.CLIENT_CONFIG.voiceChatDistance.get().floatValue();
 
-            if (distance > fadeDistance) {
-                percentage = 1F - Math.min((distance - fadeDistance) / (maxDistance - fadeDistance), 1F);
-            }
-
-            if (VoicechatClient.CLIENT_CONFIG.stereo.get()) {
-                Pair<Float, Float> stereoVolume = Utils.getStereoVolume(minecraft, player.position(), client.getVoiceChatDistance());
-                stereo = Utils.convertToStereo(monoData, percentage * stereoVolume.getLeft(), percentage * stereoVolume.getRight());
-            } else {
-                stereo = Utils.convertToStereo(monoData, percentage, percentage);
-            }
+        if (distance > fadeDistance) {
+            percentage = 1F - Math.min((distance - fadeDistance) / (maxDistance - fadeDistance), 1F);
         }
 
-        gainControl.setValue(Math.min(Math.max(Utils.percentageToDB(VoicechatClient.CLIENT_CONFIG.voiceChatVolume.get().floatValue() * (float) VoicechatClient.VOLUME_CONFIG.getVolume(uuid)), gainControl.getMinimum()), gainControl.getMaximum()));
+        if (VoicechatClient.CLIENT_CONFIG.stereo.get()) {
+            Pair<Float, Float> stereoVolume = Utils.getStereoVolume(minecraft, player.position(), maxDistance);
+            stereo = Utils.convertToStereo(monoData, percentage * stereoVolume.getLeft(), percentage * stereoVolume.getRight());
+        } else {
+            stereo = Utils.convertToStereo(monoData, percentage, percentage);
+        }
+
+        float db = Math.min(Math.max(Utils.percentageToDB(VoicechatClient.CLIENT_CONFIG.voiceChatVolume.get().floatValue() * (float) VoicechatClient.VOLUME_CONFIG.getVolume(uuid)),
+                gainControl.getMinimum()), gainControl.getMaximum());
+        gainControl.setValue(db);
 
         speaker.write(stereo, 0, stereo.length);
         speaker.start();

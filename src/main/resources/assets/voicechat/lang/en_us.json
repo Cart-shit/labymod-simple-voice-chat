@@ -62,5 +62,7 @@
   "message.voicechat.accept_invite.hover": "Click to accept invitation",
   "message.voicechat.join_successful": "Successfully joined %s",
   "message.voicechat.groups_disabled": "Groups are disabled on this server",
-  "message.voicechat.invite_successful": "Successfully invited %s"
+  "message.voicechat.invite_successful": "Successfully invited %s",
+  "gui.voicechat.speaker_list.title": "Speaker overview",
+  "message.voicechat.search": "Search: "
 }

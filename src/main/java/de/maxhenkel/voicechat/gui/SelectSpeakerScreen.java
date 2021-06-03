@@ -1,9 +1,9 @@
 package de.maxhenkel.voicechat.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import de.foorcee.labymod.voicechat.client.LabymodVoicechatClient;
 import de.maxhenkel.voicechat.VoicechatClient;
 import de.maxhenkel.voicechat.gui.widgets.ListScreen;
-import de.maxhenkel.voicechat.voice.client.Client;
 import de.maxhenkel.voicechat.voice.client.DataLines;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
@@ -43,7 +43,7 @@ public class SelectSpeakerScreen extends ListScreen<String> {
             VoicechatClient.CLIENT_CONFIG.speaker.set(currentElement);
             VoicechatClient.CLIENT_CONFIG.speaker.save();
             button.active = false;
-            Client client = VoicechatClient.CLIENT.getClient();
+            LabymodVoicechatClient client = VoicechatClient.CLIENT.getClient();
             if (client != null) {
                 client.reloadDataLines();
             }

@@ -9,8 +9,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Config {
+
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
     protected Properties properties;
     protected Path path;
@@ -56,11 +60,11 @@ public class Config {
     }
 
     public void save() {
-        new Thread(() -> {
+        EXECUTOR_SERVICE.execute(() -> {
             synchronized (this) {
                 saveUnthreaded();
             }
-        }).start();
+        });
     }
 
 }

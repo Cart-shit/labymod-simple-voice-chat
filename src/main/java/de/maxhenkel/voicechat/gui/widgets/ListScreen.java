@@ -2,7 +2,6 @@ package de.maxhenkel.voicechat.gui.widgets;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import de.maxhenkel.voicechat.Voicechat;
 import de.maxhenkel.voicechat.VoicechatClient;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.gui.components.Button;
@@ -19,7 +18,7 @@ public abstract class ListScreen<T> extends Screen {
 
     protected static final int FONT_COLOR = 4210752;
 
-    private static final ResourceLocation TEXTURE = new ResourceLocation(Voicechat.MODID, "textures/gui/gui_generic_small.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(VoicechatClient.MODID, "textures/gui/gui_generic_small.png");
 
     protected int guiLeft;
     protected int guiTop;

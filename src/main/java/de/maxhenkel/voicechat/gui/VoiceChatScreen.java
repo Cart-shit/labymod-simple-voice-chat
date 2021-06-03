@@ -2,10 +2,8 @@ package de.maxhenkel.voicechat.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import de.maxhenkel.voicechat.Voicechat;
 import de.maxhenkel.voicechat.VoicechatClient;
 import de.maxhenkel.voicechat.gui.widgets.ToggleImageButton;
-import de.maxhenkel.voicechat.voice.client.Client;
 import de.maxhenkel.voicechat.voice.client.ClientPlayerStateManager;
 import de.maxhenkel.voicechat.voice.client.MicrophoneActivationType;
 import net.minecraft.client.gui.components.Button;
@@ -19,10 +17,10 @@ import java.util.Collections;
 
 public class VoiceChatScreen extends VoiceChatScreenBase {
 
-    private static final ResourceLocation TEXTURE = new ResourceLocation(Voicechat.MODID, "textures/gui/gui_voicechat.png");
-    private static final ResourceLocation MICROPHONE = new ResourceLocation(Voicechat.MODID, "textures/gui/micrphone_button.png");
-    private static final ResourceLocation HIDE = new ResourceLocation(Voicechat.MODID, "textures/gui/hide_button.png");
-    private static final ResourceLocation SPEAKER = new ResourceLocation(Voicechat.MODID, "textures/gui/speaker_button.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(VoicechatClient.MODID, "textures/gui/gui_voicechat.png");
+    private static final ResourceLocation MICROPHONE = new ResourceLocation(VoicechatClient.MODID, "textures/gui/micrphone_button.png");
+    private static final ResourceLocation HIDE = new ResourceLocation(VoicechatClient.MODID, "textures/gui/hide_button.png");
+    private static final ResourceLocation SPEAKER = new ResourceLocation(VoicechatClient.MODID, "textures/gui/speaker_button.png");
 
     private ToggleImageButton mute;
 
@@ -58,21 +56,10 @@ public class VoiceChatScreen extends VoiceChatScreenBase {
         });
         addRenderableWidget(hide);
 
-        Button settings = new Button(guiLeft + 6, guiTop + 6 + 15, 75, 20, new TextComponent("Settings"), button -> {
+        Button settings = new Button(guiLeft + 60, guiTop + 6 + 15, 75, 20, new TextComponent("Settings"), button -> {
             minecraft.setScreen(new VoiceChatSettingsScreen());
         });
         addRenderableWidget(settings);
-
-        Button group = new Button(guiLeft + xSize - 6 - 75 + 1, guiTop + 6 + 15, 75, 20, new TextComponent("Group"), button -> {
-            if (stateManager.isInGroup()) {
-                minecraft.setScreen(new GroupScreen());
-            } else {
-                minecraft.setScreen(new CreateGroupScreen());
-            }
-        });
-        addRenderableWidget(group);
-        Client client = VoicechatClient.CLIENT.getClient();
-        group.active = client != null && client.groupsEnabled();
 
         checkButtons();
     }

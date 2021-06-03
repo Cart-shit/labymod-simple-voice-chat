@@ -3,32 +3,24 @@ package de.maxhenkel.voicechat.voice.client;
 import de.maxhenkel.voicechat.VoicechatClient;
 import de.maxhenkel.voicechat.events.ClientVoiceChatEvents;
 import de.maxhenkel.voicechat.events.ClientWorldEvents;
-import de.maxhenkel.voicechat.net.NetManager;
-import de.maxhenkel.voicechat.net.PlayerStatePacket;
-import de.maxhenkel.voicechat.net.PlayerStatesPacket;
 import de.maxhenkel.voicechat.voice.common.PlayerState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ClientPlayerStateManager {
 
     private boolean muted;
-    private PlayerState state;
-    private Map<UUID, PlayerState> states;
+    private final PlayerState state;
+    private final Map<UUID, PlayerState> states;
 
     public ClientPlayerStateManager() {
         muted = VoicechatClient.CLIENT_CONFIG.muted.get();
         state = new PlayerState(VoicechatClient.CLIENT_CONFIG.disabled.get(), true, Minecraft.getInstance().getUser().getGameProfile());
         states = new HashMap<>();
-        NetManager.registerClientReceiver(PlayerStatePacket.class, (client, handler, responseSender, packet) -> {
-            states.put(packet.getPlayerState().getGameProfile().getId(), packet.getPlayerState());
-        });
-        NetManager.registerClientReceiver(PlayerStatesPacket.class, (client, handler, responseSender, packet) -> {
-            states = packet.getPlayerStates();
-        });
         ClientVoiceChatEvents.VOICECHAT_CONNECTED.register(this::onVoiceChatConnected);
         ClientVoiceChatEvents.VOICECHAT_DISCONNECTED.register(this::onVoiceChatDisconnected);
         ClientWorldEvents.DISCONNECT.register(this::onDisconnect);
@@ -39,16 +31,22 @@ public class ClientPlayerStateManager {
      */
     public void onVoiceChatDisconnected() {
         state.setDisconnected(true);
-        syncOwnState();
-
     }
 
     /**
      * Called when the voicechat client gets (re)connected
      */
-    public void onVoiceChatConnected(Client client) {
+    public void onVoiceChatConnected(VoicechatClient client) {
         state.setDisconnected(false);
-        syncOwnState();
+    }
+
+    public void registerPlayer(UUID player) {
+        if (Minecraft.getInstance().level == null) return;
+        Player p = Minecraft.getInstance().level.getPlayerByUUID(player);
+        if (p == null) return;
+        boolean muted = VoicechatClient.MUTED_PLAYER.isPlayerMuted(player);
+        PlayerState playerState = new PlayerState(muted, false, p.getGameProfile());
+        states.put(player, playerState);
     }
 
     private void onDisconnect() {
@@ -73,10 +71,6 @@ public class ClientPlayerStateManager {
         return playerState.isDisconnected();
     }
 
-    public void syncOwnState() {
-        NetManager.sendToServer(new PlayerStatePacket(state));
-    }
-
     public boolean isDisabled() {
         return state.isDisabled();
     }
@@ -89,7 +83,6 @@ public class ClientPlayerStateManager {
         state.setDisabled(disabled);
         VoicechatClient.CLIENT_CONFIG.disabled.set(disabled);
         VoicechatClient.CLIENT_CONFIG.disabled.save();
-        syncOwnState();
     }
 
     public boolean isMuted() {
@@ -102,39 +95,16 @@ public class ClientPlayerStateManager {
         VoicechatClient.CLIENT_CONFIG.muted.save();
     }
 
-    public boolean isInGroup() {
-        return getGroup() != null;
-    }
-
-    public boolean isInGroup(Player player) {
-        PlayerState state = states.get(player.getUUID());
-        if (state == null) {
-            return false;
-        }
-        return state.hasGroup();
-    }
-
-    @Nullable
-    public String getGroup(Player player) {
-        PlayerState state = states.get(player.getUUID());
-        if (state == null) {
-            return null;
-        }
-        return state.getGroup();
-    }
-
-    @Nullable
-    public String getGroup() {
-        return state.getGroup();
-    }
-
-    public void setGroup(@Nullable String group) {
-        state.setGroup(group);
-        syncOwnState();
-    }
-
     public List<PlayerState> getPlayerStates() {
         return new ArrayList<>(states.values());
+    }
+
+    public List<PlayerState> getPlayerStatesByName(String name) {
+        String lowerCase = name.toLowerCase(Locale.ROOT);
+        return states.values().stream()
+                .filter(playerState -> playerState.getGameProfile().getName().toLowerCase(Locale.ROOT).startsWith(lowerCase))
+                .sorted(Comparator.comparing(playerState -> playerState.getGameProfile().getName()))
+                .collect(Collectors.toList());
     }
 
     @Nullable

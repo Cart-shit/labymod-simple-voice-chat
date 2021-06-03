@@ -35,6 +35,9 @@ dependencies {
 
     implementation 'de.maxhenkel.opus4j:opus4j:1.0.0'
     shadow 'de.maxhenkel.opus4j:opus4j:1.0.0'
+
+    compileOnly 'org.projectlombok:lombok:1.18.20'
+    annotationProcessor 'org.projectlombok:lombok:1.18.20'
 }
 
 processResources {

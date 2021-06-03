@@ -1,6 +1,6 @@
 package de.maxhenkel.voicechat.voice.client;
 
-import de.maxhenkel.voicechat.VoicechatClient;
+import de.foorcee.labymod.voicechat.client.LabymodVoicechatClient;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -11,13 +11,13 @@ public class AudioChannelConfig {
     private int sampleRate;
     private int frameSize;
 
-    public AudioChannelConfig(Client client) {
+    public AudioChannelConfig(LabymodVoicechatClient client) {
         sampleRate = 48000;
         frameSize = (sampleRate / 1000) * 2 * 20;
         monoFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, 16, 1, 2, sampleRate, false);
         stereoFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, 16, 2, 4, sampleRate, false);
 
-        VoicechatClient.LOGGER.info("Setting sample rate to {} Hz, codec to {} and frame size to {} bytes", sampleRate, client.getCodec().name(), frameSize);
+        //VoicechatClient.LOGGER.info("Setting sample rate to {} Hz, codec to {} and frame size to {} bytes", sampleRate, client.getCodec().name(), frameSize);
     }
 
     public AudioFormat getMonoFormat() {

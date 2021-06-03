@@ -18,6 +18,9 @@ public class ClientConfig {
     public final ConfigBuilder.ConfigEntry<Boolean> hideIcons;
     public final ConfigBuilder.ConfigEntry<Boolean> showGroupHUD;
 
+    public final ConfigBuilder.ConfigEntry<Double> voiceChatDistance;
+    public final ConfigBuilder.ConfigEntry<Double> voiceChatFadeDistance;
+
     public ClientConfig(ConfigBuilder builder) {
         voiceChatVolume = builder.doubleEntry("voice_chat_volume", 1D, 0D, 2D);
         voiceActivationThreshold = builder.doubleEntry("voice_activation_threshold", -50D, -127D, 0D);
@@ -32,6 +35,9 @@ public class ClientConfig {
         stereo = builder.booleanEntry("stereo", true);
         hideIcons = builder.booleanEntry("hide_icons", false);
         showGroupHUD = builder.booleanEntry("show_group_hud", true);
+
+        voiceChatDistance = builder.doubleEntry("voice_distance", 32D, 1D, 1_000_000D);
+        voiceChatFadeDistance = builder.doubleEntry("voice_fade_distance", 16D, 1D, 1_000_000D);
     }
 
 }

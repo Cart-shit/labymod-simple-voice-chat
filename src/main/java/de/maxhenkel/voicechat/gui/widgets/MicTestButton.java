@@ -1,8 +1,8 @@
 package de.maxhenkel.voicechat.gui.widgets;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import de.foorcee.labymod.voicechat.client.LabymodVoicechatClient;
 import de.maxhenkel.voicechat.VoicechatClient;
-import de.maxhenkel.voicechat.voice.client.Client;
 import de.maxhenkel.voicechat.voice.client.DataLines;
 import de.maxhenkel.voicechat.voice.client.MicThread;
 import de.maxhenkel.voicechat.voice.common.Utils;
@@ -18,9 +18,9 @@ public class MicTestButton extends AbstractButton {
     private boolean micActive;
     private VoiceThread voiceThread;
     private MicListener micListener;
-    private Client client;
+    private LabymodVoicechatClient client;
 
-    public MicTestButton(int xIn, int yIn, int widthIn, int heightIn, MicListener micListener, Client client) {
+    public MicTestButton(int xIn, int yIn, int widthIn, int heightIn, MicListener micListener, LabymodVoicechatClient client) {
         super(xIn, yIn, widthIn, heightIn, TextComponent.EMPTY);
         this.micListener = micListener;
         this.client = client;
