@@ -30,9 +30,12 @@ public class TcpClientPlayHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        if (msg instanceof KickRequest kick) {
+        if (msg instanceof KickRequest) {
+            KickRequest kick = (KickRequest)msg;
             client.kick(kick.getReason());
-        } else if (msg instanceof AudioChunkServer audioChunkServer) {
+        } else if (msg instanceof AudioChunkServer) {
+            AudioChunkServer audioChunkServer = (AudioChunkServer) msg;
+
             PlayerState state = VoicechatClient.CLIENT.getPlayerStateManager().getState(audioChunkServer.getUuid());
             if(state != null && state.isDisabled()) return;
 
@@ -48,10 +51,12 @@ public class TcpClientPlayHandler extends ChannelInboundHandlerAdapter {
 
             audioChannels.values().stream().filter(AudioChannel::canKill).forEach(AudioChannel::closeAndKill);
             audioChannels.entrySet().removeIf(entry -> entry.getValue().isClosed());
-        } else if (msg instanceof Alive alive) {
+        } else if (msg instanceof Alive) {
+            Alive alive = (Alive) msg;
             VoicechatClient.CLIENT.getPlayerStateManager().registerPlayer(alive.getUuid());
             log.info("Received Alive for " + alive.getUuid());
-        } else if (msg instanceof AddressedEnvelope addressedEnvelope) {
+        } else if (msg instanceof AddressedEnvelope) {
+            AddressedEnvelope addressedEnvelope = (AddressedEnvelope)msg;
             channelRead(ctx, addressedEnvelope.content());
         }
     }

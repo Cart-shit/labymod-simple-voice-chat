@@ -44,8 +44,9 @@ public class TcpClientLoginHandler extends ChannelInboundHandlerAdapter {
             validateState(0);
             GameProfile profile = Minecraft.getInstance().getUser().getGameProfile();
             ctx.writeAndFlush(new LoginRequest(profile.getId(), profile.getName()));
-        } else if (msg instanceof EncryptionRequest request) {
+        } else if (msg instanceof EncryptionRequest) {
             validateState(1);
+            EncryptionRequest request = (EncryptionRequest) msg;
 
             SecretKey secretKey = client.getEncryption().generateKey();
             PublicKey publicKey = client.getEncryption().decodePublicKey(request.getPublicKey());
@@ -68,18 +69,21 @@ public class TcpClientLoginHandler extends ChannelInboundHandlerAdapter {
                     e.printStackTrace();
                 }
             });
-        } else if (msg instanceof UdpEnable enable) {
+        } else if (msg instanceof UdpEnable) {
             validateState(2);
+            UdpEnable enable = (UdpEnable) msg;
             client.connectToUdp(() -> {
                 Channel udp = client.getUdpClient();
                 udp.writeAndFlush(new UdpEnable(enable.getSecret(), ((InetSocketAddress) udp.localAddress()).getPort()));
             });
-        } else if (msg instanceof LoginResponse response) {
+        } else if (msg instanceof LoginResponse) {
             validateState(3);
+            LoginResponse response = (LoginResponse) msg;
 
             ctx.pipeline().replace(this, "handle", this.client.getTcpClientPlayHandler());
             this.client.connected(response.isYouAreAdmin());
-        } else if (msg instanceof KickRequest request) {
+        } else if (msg instanceof KickRequest) {
+            KickRequest request = (KickRequest) msg;
             client.kick(request.getReason());
         }
     }
