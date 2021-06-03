@@ -1,5 +1,6 @@
 package de.maxhenkel.voicechat.voice.client;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.foorcee.labymod.voicechat.client.LabymodVoicechatClient;
@@ -9,6 +10,7 @@ import de.maxhenkel.voicechat.voice.common.PlayerState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -81,10 +83,17 @@ public class TalkingChatManager {
     }
 
     private static Component getPlayerName(PlayerState playerState) {
+        GameProfile profile = playerState.getGameProfile();
         if (minecraft.level != null) {
-            Player player = minecraft.level.getPlayerByUUID(playerState.getGameProfile().getId());
+            Player player = minecraft.level.getPlayerByUUID(profile.getId());
             if (player != null) {
                 return player.getDisplayName();
+            }
+            if (minecraft.getConnection() != null) {
+                PlayerInfo playerInfo = minecraft.getConnection().getPlayerInfo(profile.getId());
+                if (playerInfo != null && playerInfo.getTabListDisplayName() != null) {
+                    return playerInfo.getTabListDisplayName();
+                }
             }
         }
 

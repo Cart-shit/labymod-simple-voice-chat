@@ -56,10 +56,16 @@ public class VoiceChatScreen extends VoiceChatScreenBase {
         });
         addRenderableWidget(hide);
 
-        Button settings = new Button(guiLeft + 60, guiTop + 6 + 15, 75, 20, new TextComponent("Settings"), button -> {
+        Button settings = new Button(guiLeft + 6, guiTop + 6 + 15, 90, 20, new TextComponent("Settings"), button -> {
             minecraft.setScreen(new VoiceChatSettingsScreen());
         });
         addRenderableWidget(settings);
+
+
+        Button surroundSound = new Button(guiLeft + xSize - 6 - 90 + 1, guiTop + 6 + 15, 90, 20, new TextComponent("Surround Sound"), button -> {
+            minecraft.setScreen(new SurroundSoundSettingsScreen());
+        });
+        addRenderableWidget(surroundSound);
 
         checkButtons();
     }

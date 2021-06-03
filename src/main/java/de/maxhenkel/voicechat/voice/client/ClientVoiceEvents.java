@@ -13,6 +13,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.mixin.client.rendering.MixinInGameHud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -98,6 +99,7 @@ public class ClientVoiceEvents {
             renderIcon(stack, MICROPHONE_ICON);
         }
 
+        if (Minecraft.getInstance().options.renderDebug) return;
         TalkingChatManager.renderIcons(stack);
     }
 
@@ -147,6 +149,16 @@ public class ClientVoiceEvents {
                 minecraft.player.displayClientMessage(new TranslatableComponent("message.voicechat.icons_visible"), true);
             }
         }
+
+        if (minecraft.screen != null) {
+            if (!client.getMicThread().isMicrophoneLocked()) {
+                client.getMicThread().setMicrophoneLocked(true);
+            }
+        }else{
+            if (client.getMicThread().isMicrophoneLocked()) {
+                client.getMicThread().setMicrophoneLocked(false);
+            }
+        }
     }
 
     public boolean checkConnected() {
@@ -189,7 +201,7 @@ public class ClientVoiceEvents {
                 renderPlayerIcon(player, component, SPEAKER_OFF_ICON, stack, vertexConsumers, light);
             } else if (VoicechatClient.CLIENT.getTalkCache().isTalking(player)) {
                 renderPlayerIcon(player, component, SPEAKER_ICON, stack, vertexConsumers, light);
-            }else{
+            } else {
                 renderPlayerIcon(player, component, SPEAKER_ICON_INACTIVE, stack, vertexConsumers, light);
             }
         }

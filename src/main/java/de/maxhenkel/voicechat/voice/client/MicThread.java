@@ -166,6 +166,10 @@ public class MicThread extends Thread {
         return !microphoneLocked && (activating || wasPTT);
     }
 
+    public boolean isMicrophoneLocked() {
+        return microphoneLocked;
+    }
+
     public void setMicrophoneLocked(boolean microphoneLocked) {
         this.microphoneLocked = microphoneLocked;
         activating = false;
