@@ -151,11 +151,11 @@ public class ClientVoiceEvents {
         }
 
         if (minecraft.screen != null) {
-            if (!client.getMicThread().isMicrophoneLocked()) {
+            if (client.getMicThread() != null && !client.getMicThread().isMicrophoneLocked()) {
                 client.getMicThread().setMicrophoneLocked(true);
             }
         }else{
-            if (client.getMicThread().isMicrophoneLocked()) {
+            if (client.getMicThread() != null && client.getMicThread().isMicrophoneLocked()) {
                 client.getMicThread().setMicrophoneLocked(false);
             }
         }
