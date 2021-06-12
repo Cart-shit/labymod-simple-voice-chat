@@ -18,6 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -79,7 +80,7 @@ public class TalkingChatManager {
         return VoicechatClient.CLIENT.getTalkCache()
                 .getTalkingPlayers(5, TimeUnit.SECONDS).stream()
                 .filter(uuid -> includeSelf || !uuid.equals(Minecraft.getInstance().player.getUUID()))
-                .map(VoicechatClient.CLIENT.getPlayerStateManager()::getState).collect(Collectors.toList());
+                .map(VoicechatClient.CLIENT.getPlayerStateManager()::getState).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private static Component getPlayerName(PlayerState playerState) {

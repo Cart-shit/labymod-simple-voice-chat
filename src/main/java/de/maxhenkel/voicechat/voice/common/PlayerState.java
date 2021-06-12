@@ -34,8 +34,4 @@ public class PlayerState {
         return gameProfile;
     }
 
-    public void setGameProfile(GameProfile gameProfile) {
-        this.gameProfile = gameProfile;
-    }
-
 }
