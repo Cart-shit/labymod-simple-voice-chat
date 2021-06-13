@@ -89,7 +89,7 @@ public class ClientVoiceEvents {
             return;
         }
 
-        if (playerStateManager.isDisconnected()) {
+        if ((client != null && !client.isConnected()) || playerStateManager.isDisconnected()) {
             renderIcon(stack, DISCONNECT_ICON);
         } else if (playerStateManager.isDisabled()) {
             renderIcon(stack, SPEAKER_OFF_ICON);

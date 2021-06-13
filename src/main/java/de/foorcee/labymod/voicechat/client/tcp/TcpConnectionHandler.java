@@ -18,6 +18,7 @@ public class TcpConnectionHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.info("Lost connection to voice server");
         client.disconnect();
+        client.reconnect();
     }
 
     @Override

@@ -30,6 +30,8 @@ import net.labymod.voicechat.protocol.packet.audio.KeepAlive;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -37,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 public class LabymodVoicechatClient {
 
+    private static final Timer TIMER = new Timer();
     private static final KeepAlive KEEP_ALIVE = new KeepAlive(new byte[256]);
     private static final boolean EPOLL = false;
 
@@ -145,6 +148,10 @@ public class LabymodVoicechatClient {
         });
     }
 
+    public boolean isConnected() {
+        return getState().isConnected();
+    }
+
     public void connected(boolean youAreAdmin) {
         updateState(ConnectionState.ESTABLISHED);
         ClientVoiceChatEvents.VOICECHAT_CONNECTED.invoker().accept(client);
@@ -164,6 +171,24 @@ public class LabymodVoicechatClient {
 
     public void disconnect() {
         updateState(ConnectionState.DISCONNECTED);
+        if (this.tcpClient != null && this.tcpClient.isActive()) {
+            this.tcpClient.close();
+        }
+
+        if (this.udpClient != null && this.udpClient.isActive()) {
+            this.udpClient.close();
+        }
+    }
+
+    public void reconnect() {
+        log.info("try reconnect in 30 seconds");
+        TIMER.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                log.info("reconnecting ...");
+                connect();
+            }
+        }, TimeUnit.SECONDS.toMillis(30));
     }
 
     public void sendPacket(Object obj) {
