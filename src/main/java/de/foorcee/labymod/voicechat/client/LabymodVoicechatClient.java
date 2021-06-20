@@ -178,6 +178,16 @@ public class LabymodVoicechatClient {
         if (this.udpClient != null && this.udpClient.isActive()) {
             this.udpClient.close();
         }
+
+        try {
+            if (micThread != null) {
+                VoicechatClient.LOGGER.debug("Closing microphone thread");
+                micThread.close();
+                micThread = null;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     public void reconnect() {
