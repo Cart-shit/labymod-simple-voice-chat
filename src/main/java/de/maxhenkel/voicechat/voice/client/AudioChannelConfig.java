@@ -1,6 +1,7 @@
 package de.maxhenkel.voicechat.voice.client;
 
 import de.foorcee.labymod.voicechat.client.LabymodVoicechatClient;
+import de.maxhenkel.voicechat.VoicechatClient;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -34,5 +35,9 @@ public class AudioChannelConfig {
 
     public int getFrameSize() {
         return frameSize;
+    }
+
+    public int maxSpeakerBufferSize() {
+        return frameSize * (32 + VoicechatClient.CLIENT_CONFIG.outputBufferSize.get());
     }
 }
