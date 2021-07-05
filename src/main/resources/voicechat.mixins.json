@@ -8,8 +8,7 @@
     "EntityRendererMixin",
     "MinecraftMixin",
     "KeyboardMixin",
-    "MouseMixin",
-    "LabymodSpooferMixin"
+    "MouseMixin"
   ],
   "injectors": {
     "defaultRequire": 1
