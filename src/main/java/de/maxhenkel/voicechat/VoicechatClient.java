@@ -1,7 +1,6 @@
 package de.maxhenkel.voicechat;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import de.foorcee.labymod.voicechat.client.DevAuthUtil;
 import de.maxhenkel.voicechat.config.ClientConfig;
 import de.maxhenkel.voicechat.config.ConfigBuilder;
 import de.maxhenkel.voicechat.config.MutedPlayerConfig;
@@ -39,8 +38,6 @@ public class VoicechatClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        DevAuthUtil.auth();
-
         ConfigBuilder.create(Minecraft.getInstance().gameDirectory.toPath().resolve("config").resolve(MODID).resolve("voicechat-client.properties"), builder -> CLIENT_CONFIG = new ClientConfig(builder));
         VOLUME_CONFIG = new PlayerVolumeConfig(Minecraft.getInstance().gameDirectory.toPath().resolve("config").resolve("voicechat-volumes.properties"));
         MUTED_PLAYER = new MutedPlayerConfig(Minecraft.getInstance().gameDirectory.toPath().resolve("config").resolve(MODID).resolve("voicechat-mutes.properties"));
